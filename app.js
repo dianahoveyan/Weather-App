@@ -1,6 +1,6 @@
 let weather = {
-
     fetchWeather: function (city) {
+        console.log(city , '@#####');
         fetch(`http://localhost:3000/api/getWeather/?city=${city}`)
             .then((response) => {
                 if (!response.ok) {
@@ -26,8 +26,12 @@ let weather = {
         document.querySelector(".weather").classList.remove("loading");
         document.body.style.backgroundImage = "url('https://source.unsplash.com/1600x900/?" + name + "')";
     },
-    search: function (){
-        this.fetchWeather(document.querySelector(".search-bar").value);
+    search: function (value = document.querySelector(".search-bar").value){
+        if(value) {
+            document.querySelector(".search-bar").value = value;
+        }
+        console.log('here!!');
+        this.fetchWeather(value);
     }
 };
 
@@ -43,5 +47,48 @@ document
             weather.search();
     }
 })
-
 weather.fetchWeather("Denver");
+
+
+const searchInput = document.getElementById('city-input');
+const searchWrapper = document.querySelector('.search');
+const resultsWrapper = document.querySelector('.results');
+console.log(searchInput);
+searchInput.addEventListener('keyup', () => {
+    console.log('keyup');
+    fetch(`http://localhost:3000/api/options?minPopulation=1000000&namePrefix=${searchInput.value}`)
+    .then(response => {
+        response.json()
+            .then(({ data }) => {
+                console.log(data);
+                renderResults(data);
+            })
+    })
+    .catch(err => console.error(err));
+})
+
+function renderResults(results = []) {
+    if (!results.length) {
+        return searchWrapper.classList.remove('show');
+    }
+
+    const content = results
+        .map(({city}) => {
+            return `<li onclick="weather.search('${city}'), searchWrapper.classList.remove('show')">${city}</li>`;
+        })
+        .join('');
+
+    searchWrapper.classList.add('show');
+    resultsWrapper.innerHTML = `<ul>${content}</ul>`;
+
+}
+
+const debounce = (fn,ms) => {
+    let timeout;
+    return function (){
+        const fnCall = () => { fn.apply(this, arguments)}
+        clearTimeout(timeout);
+        timeout =setTimeout(fnCall, ms)
+    }
+}
+renderResults = debounce(renderResults,200)
